@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Gioco</title>
+<style>
+  html,body {
+    height:100%;
+    margin:0;
+    background:#000;
+    color:#fff;
+    overflow:hidden;
+    font-family: sans-serif;
+  }
+
+  #overlay {
+    position:fixed;
+    inset:0;
+    background:#000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    z-index:9999;
+  }
+
+  #scare-img, #jumpscare-img {
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+  }
+
+  #jumpscare-img {
+    display:none;
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    animation: flash 0.2s infinite alternate;
+    z-index:10000;
+  }
+
+  @keyframes flash {
+    from { filter:brightness(1); }
+    to   { filter:brightness(3); }
+  }
+
+  #final {
+    display:none;
+    text-align:center;
+    z-index:10001;
+  }
+
+  #final h1 {
+    font-size: clamp(28px, 10vw, 64px);
+    color: #ff1e1e;
+    text-shadow: 0 0 20px rgba(255,30,30,0.8);
+    margin:0;
+    animation: blink 0.8s linear infinite;
+  }
+
+  @keyframes blink {
+    0% { opacity:1; }
+    50% { opacity:0.2; }
+    100% { opacity:1; }
+  }
+</style>
+</head>
+<body>
+<div id="overlay">
+  <img id="scare-img" src="https://upload.wikimedia.org/wikipedia/en/1/1e/Billy_the_Puppet.png" alt="Jigsaw" />
+  <img id="jumpscare-img" src="https://upload.wikimedia.org/wikipedia/en/1/1e/Billy_the_Puppet.png" alt="Jumpscare Jigsaw" />
+  <div id="final">
+    <h1>Quanto potere ho?</h1>
+  </div>
+</div>
+
+<script>
+const scareImg = document.getElementById("scare-img");
+const jumpscareImg = document.getElementById("jumpscare-img");
+const finalDiv = document.getElementById("final");
+
+let ctx;
+function playBackground() {
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "sawtooth";
+  osc.frequency.value = 80;
+  gain.gain.value = 0.05;
+  osc.connect(gain).connect(ctx.destination);
+  osc.start();
+  setTimeout(()=>{ try{osc.stop();}catch(e){} }, 15000);
+}
+
+function playJumpscareSound() {
+  const audioCtx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = "square";
+  o.frequency.setValueAtTime(800, audioCtx.currentTime);
+  g.gain.setValueAtTime(0.9, audioCtx.currentTime);
+  o.connect(g).connect(audioCtx.destination);
+  o.start();
+  setTimeout(()=>{ try{o.stop();}catch(e){} }, 1000);
+}
+
+function startSequence() {
+  playBackground();
+  setTimeout(() => {
+    scareImg.style.display = "none";
+    jumpscareImg.style.display = "block";
+    playJumpscareSound();
+    setTimeout(() => {
+      jumpscareImg.style.display = "none";
+      finalDiv.style.display = "block";
+    }, 1200);
+  }, 15000);
+}
+
+document.body.addEventListener("click", () => {
+  if(!ctx || ctx.state === "suspended") {
+    startSequence();
+  }
+}, {once:true});
+
+if(!/Mobi|Android/i.test(navigator.userAgent)) {
+  startSequence();
+}
+</script>
+</body>
+</html>
